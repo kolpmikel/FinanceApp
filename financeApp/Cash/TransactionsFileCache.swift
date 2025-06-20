@@ -12,14 +12,28 @@ final class TransactionsFileCache {
     init(fileName: String = "transactions.json") {
         self.fileName = fileName
         let fm = FileManager.default
-        let supportDir = try! fm.url(
+
+        guard let supportDir = fm.urls(
             for: .applicationSupportDirectory,
-            in: .userDomainMask,
-            appropriateFor: nil,
-            create: true
-        )
+            in: .userDomainMask
+        ).first else {
+            fatalError("Не удалось найти Application Support directory")
+        }
+
+        if !fm.fileExists(atPath: supportDir.path) {
+            do {
+                try fm.createDirectory(
+                    at: supportDir,
+                    withIntermediateDirectories: true,
+                    attributes: nil
+                )
+            } catch {
+                fatalError("Не удалось создать Application Support directory: \(error)")
+            }
+        }
+
         self.fileURL = supportDir.appendingPathComponent(fileName)
-        let _ = load()
+        _ = load()
     }
 
     func add(_ transaction: Transaction) {
@@ -70,4 +84,3 @@ final class TransactionsFileCache {
         return transactions
     }
 }
-

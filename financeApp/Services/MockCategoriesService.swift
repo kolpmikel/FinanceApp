@@ -5,9 +5,9 @@ protocol CategoriesServiceProtocol {
     func fetch(by direction: Direction) async throws -> [Category]
 }
 
-final class MockCategoriesService: CategoriesServiceProtocol {
+final class MockCategoriesService: CategoriesServiceProtocol, ObservableObject{
     
-    private let sample: [Category] = [
+    @Published private var sample: [Category] = [
         Category(id: 1, name: "Зарплата", emoji: "💰", direction: .income),
         Category(id: 2, name: "Подарки", emoji: "🎁", direction: .income),
         Category(id: 3, name: "Продукты", emoji: "🛒", direction: .outcome),

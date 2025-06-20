@@ -1,38 +1,107 @@
 import Foundation
 
-protocol TransactionsServiceProtocol {
-
-    func fetch(start: Date, end: Date) async throws -> [Transaction]
-
-
-    func create(_ transaction: Transaction) async throws -> Transaction
-
-
-    func update(_ transaction: Transaction) async throws -> Transaction
-
-
-    func delete(id: Int) async throws
-}
-
 enum TransactionsServiceError: Error {
     case notFound(id: Int)
 }
 
-final class MockTransactionsService: TransactionsServiceProtocol {
+final class MockTransactionsService:  ObservableObject {
+    
+    @Published private var mockTransactions: [Transaction] = [
+        Transaction(
+            id: 1,
+            accountId: 1,
+            categoryId: 1,
+            amount: Decimal(50000.00),
+            transactionDate: Date(),
+            comment: "Получка",
+            createdAt: Date(),
+            updatedAt: Date()
+        ),
+        Transaction(
+            id: 1,
+            accountId: 1,
+            categoryId: 3,
+            amount: Decimal(490.45),
+            transactionDate: Date(),
+            comment: nil,
+            createdAt: Date(),
+            updatedAt: Date()
+        ),
+        Transaction(
+            id: 2,
+            accountId: 1,
+            categoryId: 5,
+            amount: Decimal(123.00),
+            transactionDate: Date(),
+            comment: "Кофе",
+            createdAt: Date(),
+            updatedAt: Date()
+        ),
+        Transaction(
+            id: 3,
+            accountId: 1,
+            categoryId: 3,
+            amount: Decimal(40000.00),
+            transactionDate: Date(),
+            comment: "Перевод",
+            createdAt: Date(),
+            updatedAt: Date()
+        ),
+        Transaction(
+            id: 4,
+            accountId: 1,
+            categoryId: 1,
+            amount: Decimal(5678.00),
+            transactionDate: Calendar.current.date(byAdding: .day, value: -2, to: Date()) ?? Date(),
+            comment: "Абонемент",
+            createdAt: Date(),
+            updatedAt: Date()
+        ),
+        Transaction(
+            id: 5,
+            accountId: 1,
+            categoryId: 2,
+            amount: Decimal(10000.00),
+            transactionDate: Calendar.current.date(byAdding: .day, value: -5, to: Date()) ?? Date(),
+            comment: "Долг",
+            createdAt: Date(),
+            updatedAt: Date()
+        ),
+        Transaction(
+            id: 6,
+            accountId: 1,
+            categoryId: 3,
+            amount: Decimal(4000.00),
+            transactionDate: Calendar.current.date(byAdding: .day, value: -14, to: Date()) ?? Date(),
+            comment: "Магазин",
+            createdAt: Date(),
+            updatedAt: Date()
+        )
+        
+    ]
+    
+    
     private var transactions: [Transaction]
     private var nextId: Int
-
+    
     init(initial: [Transaction] = []) {
         self.transactions = initial
         self.nextId = (initial.map { $0.id }.max() ?? 0) + 1
     }
-
-    func fetch(start: Date, end: Date) async throws -> [Transaction] {
-        return transactions.filter { tx in
-            tx.transactionDate >= start && tx.transactionDate <= end
+    
+    func todayInterval() -> DateInterval {
+        let startOfDay = Calendar.current.startOfDay(for: Date())
+        let endOfDay = Calendar.current.date(byAdding: .day, value: 1, to: startOfDay)!
+        return DateInterval(start: startOfDay, end: endOfDay)
+    }
+    
+    func getTransactionsOfPeriod(interval: DateInterval) async throws -> [Transaction] {
+        
+        return mockTransactions.filter { transaction in
+            interval.contains(transaction.transactionDate)
         }
     }
-
+    
     func create(_ transaction: Transaction) async throws -> Transaction {
         let now = Date()
         let newTx = Transaction(
@@ -51,7 +120,7 @@ final class MockTransactionsService: TransactionsServiceProtocol {
         nextId += 1
         return newTx
     }
-
+    
     func update(_ transaction: Transaction) async throws -> Transaction {
         guard let index = transactions.firstIndex(where: { $0.id == transaction.id }) else {
             throw TransactionsServiceError.notFound(id: transaction.id)
@@ -72,7 +141,7 @@ final class MockTransactionsService: TransactionsServiceProtocol {
         transactions[index] = updatedTx
         return updatedTx
     }
-
+    
     func delete(id: Int) async throws {
         guard transactions.contains(where: { $0.id == id }) else {
             throw TransactionsServiceError.notFound(id: id)
