@@ -15,12 +15,12 @@ final class MockBankAccountsService: BankAccountsServiceProtocol {
         createdAt: Date(timeIntervalSince1970: 1_600_000_000),
         updatedAt: Date(timeIntervalSince1970: 1_650_000_000)
     )
-
+    
     func fetchPrimary() async throws -> BankAccount {
-       
+        
         return sampleAccount
     }
-
+    
     func update(account: BankAccount) async throws -> BankAccount {
         sampleAccount = BankAccount(
             id: account.id,
