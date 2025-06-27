@@ -13,7 +13,7 @@ extension Transaction {
             "updatedAt"
         ].joined(separator: ",")
     }
-
+    
     static func parse(csv: String) -> [Transaction] {
         let lines = csv
             .components(separatedBy: CharacterSet.newlines)
@@ -22,11 +22,11 @@ extension Transaction {
         guard lines.count > 1 else {
             return []
         }
-
+        
         let headerColumns = lines[0].split(separator: ",").map { String($0) }
         let isoFormatter = ISO8601DateFormatter()
         var result: [Transaction] = []
-
+        
         for line in lines.dropFirst() {
             let values = line
                 .split(separator: ",", omittingEmptySubsequences: false)
@@ -50,7 +50,7 @@ extension Transaction {
             let comment    = dict["comment"]
             let createdAt  = isoFormatter.date(from: dict["createdAt"] ?? "") ?? Date()
             let updatedAt  = isoFormatter.date(from: dict["updatedAt"] ?? "") ?? Date()
-
+            
             let tx = Transaction(
                 id: id,
                 accountId: acctId,
@@ -67,7 +67,7 @@ extension Transaction {
         }
         return result
     }
-
+    
     var csvLine: String {
         let isoFormatter = ISO8601DateFormatter()
         let idStr       = String(id)
@@ -78,7 +78,7 @@ extension Transaction {
         let commentStr  = comment?.replacingOccurrences(of: "\n", with: " ") ?? ""
         let createdStr  = isoFormatter.string(from: createdAt)
         let updatedStr  = isoFormatter.string(from: updatedAt)
-
+        
         let escapedComment = commentStr.contains(",") ? "\"\(commentStr)\"" : commentStr
         
         return [

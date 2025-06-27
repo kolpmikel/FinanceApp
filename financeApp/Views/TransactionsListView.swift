@@ -90,8 +90,6 @@ struct TransactionsListView: View {
                 await viewModel.loadData()
             }
             
-            
-            
         }
         .tint(Color.blue)
         

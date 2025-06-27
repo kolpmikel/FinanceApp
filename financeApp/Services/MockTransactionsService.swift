@@ -6,14 +6,15 @@ enum TransactionsServiceError: Error {
 
 final class MockTransactionsService:  ObservableObject {
     
+    
     @Published private var mockTransactions: [Transaction] = [
         Transaction(
             id: 1,
             accountId: 1,
             categoryId: 1,
-            amount: Decimal(50000.00),
+            amount: Decimal(10000.00),
             transactionDate: Date(),
-            comment: "Получка",
+            comment: "тест",
             createdAt: Date(),
             updatedAt: Date()
         ),
@@ -21,7 +22,7 @@ final class MockTransactionsService:  ObservableObject {
             id: 1,
             accountId: 1,
             categoryId: 3,
-            amount: Decimal(490.45),
+            amount: Decimal(2000.00),
             transactionDate: Date(),
             comment: nil,
             createdAt: Date(),
@@ -31,7 +32,7 @@ final class MockTransactionsService:  ObservableObject {
             id: 2,
             accountId: 1,
             categoryId: 5,
-            amount: Decimal(123.00),
+            amount: Decimal(3000.00),
             transactionDate: Date(),
             comment: "Кофе",
             createdAt: Date(),
@@ -41,9 +42,9 @@ final class MockTransactionsService:  ObservableObject {
             id: 3,
             accountId: 1,
             categoryId: 3,
-            amount: Decimal(40000.00),
-            transactionDate: Date(),
-            comment: "Перевод",
+            amount: Decimal(10000.00),
+            transactionDate: Calendar.current.date(from: DateComponents(year: 2025, month: 6, day: 15, hour: 10, minute: 30))!,
+            comment: "Ветеринар",
             createdAt: Date(),
             updatedAt: Date()
         ),
@@ -51,7 +52,7 @@ final class MockTransactionsService:  ObservableObject {
             id: 4,
             accountId: 1,
             categoryId: 1,
-            amount: Decimal(5678.00),
+            amount: Decimal(5000.00),
             transactionDate: Calendar.current.date(byAdding: .day, value: -2, to: Date()) ?? Date(),
             comment: "Абонемент",
             createdAt: Date(),
@@ -61,19 +62,29 @@ final class MockTransactionsService:  ObservableObject {
             id: 5,
             accountId: 1,
             categoryId: 2,
-            amount: Decimal(10000.00),
+            amount: Decimal(1000.00),
             transactionDate: Calendar.current.date(byAdding: .day, value: -5, to: Date()) ?? Date(),
-            comment: "Долг",
+            comment: "Танцы",
             createdAt: Date(),
             updatedAt: Date()
         ),
         Transaction(
             id: 6,
             accountId: 1,
-            categoryId: 3,
-            amount: Decimal(4000.00),
+            categoryId: 4,
+            amount: Decimal(100.00),
             transactionDate: Calendar.current.date(byAdding: .day, value: -14, to: Date()) ?? Date(),
-            comment: "Магазин",
+            comment: "Учеба",
+            createdAt: Date(),
+            updatedAt: Date()
+        ),
+        Transaction(
+            id: 7,
+            accountId: 1,
+            categoryId: 4,
+            amount: Decimal(500.00),
+            transactionDate: Calendar.current.date(byAdding: .day, value: -17, to: Date()) ?? Date(),
+            comment: "Учеба",
             createdAt: Date(),
             updatedAt: Date()
         )

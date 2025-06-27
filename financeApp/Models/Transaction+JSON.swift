@@ -3,12 +3,12 @@ import Foundation
 extension Transaction {
     static func parse(jsonObject: Any) -> Transaction? {
         guard let dict = jsonObject as? [String: Any] else { return nil }
-
+        
         guard let id = dict["id"] as? Int else { return nil }
-
+        
         let accountId  = dict["accountId"]  as? Int
         let categoryId = dict["categoryId"] as? Int
-
+        
         let amount: Decimal
         if let str = dict["amount"] as? String, let dec = Decimal(string: str) {
             amount = dec
@@ -19,8 +19,8 @@ extension Transaction {
         else {
             return nil
         }
-
-
+        
+        
         let iso = ISO8601DateFormatter()
         guard
             let txDateStr = dict["transactionDate"] as? String,
@@ -32,9 +32,9 @@ extension Transaction {
         else {
             return nil
         }
-
+        
         let comment = dict["comment"] as? String
-
+        
         return Transaction(
             id: id,
             accountId: accountId,
@@ -48,7 +48,7 @@ extension Transaction {
             updatedAt: updatedAt
         )
     }
-
+    
     var jsonObject: Any {
         var dict: [String: Any] = [
             "id":               id,

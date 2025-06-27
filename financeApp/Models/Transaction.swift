@@ -2,20 +2,20 @@ import Foundation
 
 struct Transaction: Identifiable, Codable, Equatable {
     let id: Int
-
+    
     let accountId: Int?
     let categoryId: Int?
-
+    
     let account: BankAccount?
     let category: Category?
-
+    
     var amount: Decimal
     let transactionDate: Date
     let comment: String?
-
+    
     let createdAt: Date
     let updatedAt: Date
-
+    
     private enum CodingKeys: String, CodingKey {
         case id
         case accountId
@@ -28,7 +28,7 @@ struct Transaction: Identifiable, Codable, Equatable {
         case createdAt
         case updatedAt
     }
-
+    
     init(
         id: Int,
         accountId: Int? = nil,
@@ -52,12 +52,12 @@ struct Transaction: Identifiable, Codable, Equatable {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
-
+    
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-
+        
         self.id = try container.decode(Int.self, forKey: .id)
-
+        
         if let acct = try? container.decode(BankAccount.self, forKey: .account) {
             self.account = acct
             self.accountId = acct.id
@@ -65,7 +65,7 @@ struct Transaction: Identifiable, Codable, Equatable {
             self.account = nil
             self.accountId = try? container.decode(Int.self, forKey: .accountId)
         }
-
+        
         if let cat = try? container.decode(Category.self, forKey: .category) {
             self.category = cat
             self.categoryId = cat.id
@@ -73,7 +73,7 @@ struct Transaction: Identifiable, Codable, Equatable {
             self.category = nil
             self.categoryId = try? container.decode(Int.self, forKey: .categoryId)
         }
-
+        
         if let dec = try? container.decode(Decimal.self, forKey: .amount) {
             self.amount = dec
         }
@@ -85,7 +85,7 @@ struct Transaction: Identifiable, Codable, Equatable {
             let dbl = try container.decode(Double.self, forKey: .amount)
             self.amount = Decimal(dbl)
         }
-
+        
         let iso = ISO8601DateFormatter()
         let txDateStr  = try container.decode(String.self, forKey: .transactionDate)
         guard let txDate = iso.date(from: txDateStr) else {
@@ -95,7 +95,7 @@ struct Transaction: Identifiable, Codable, Equatable {
             )
         }
         self.transactionDate = txDate
-
+        
         let createdStr = try container.decode(String.self, forKey: .createdAt)
         guard let cDate = iso.date(from: createdStr) else {
             throw DecodingError.dataCorruptedError(
@@ -104,7 +104,7 @@ struct Transaction: Identifiable, Codable, Equatable {
             )
         }
         self.createdAt = cDate
-
+        
         let updatedStr = try container.decode(String.self, forKey: .updatedAt)
         guard let uDate = iso.date(from: updatedStr) else {
             throw DecodingError.dataCorruptedError(
@@ -113,13 +113,13 @@ struct Transaction: Identifiable, Codable, Equatable {
             )
         }
         self.updatedAt = uDate
-
+        
         self.comment = try? container.decode(String.self, forKey: .comment)
     }
-
+    
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-
+        
         try container.encode(id, forKey: .id)
         if let accountId = accountId {
             try container.encode(accountId, forKey: .accountId)
@@ -127,11 +127,11 @@ struct Transaction: Identifiable, Codable, Equatable {
         if let categoryId = categoryId {
             try container.encode(categoryId, forKey: .categoryId)
         }
-
+        
         try container.encodeIfPresent(comment, forKey: .comment)
-
+        
         try container.encode(amount, forKey: .amount)
-
+        
         let iso = ISO8601DateFormatter()
         try container.encode(iso.string(from: transactionDate), forKey: .transactionDate)
         try container.encode(iso.string(from: createdAt), forKey: .createdAt)
