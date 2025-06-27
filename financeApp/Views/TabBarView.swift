@@ -5,23 +5,19 @@ struct TabBarView: View {
         TabView {
             
             TransactionsListView(direction: .outcome)
-            
                 .tabItem {
-                    Image("Expenses");
-                    Text("Расходы")
+                    Image("Expenses"); Text("Расходы")
                 }
             
             TransactionsListView(direction: .income)
-            
                 .tabItem {
-                    Image("Income");
-                    Text("Доходы")
+                    Image("Income"); Text("Доходы")
                 }
             
             CheckView()
                 .tabItem {
                     Image("Check")
-                    Text("Чеки")
+                    Text("Счет")
                 }
             
             ArticlesView()
@@ -39,7 +35,7 @@ struct TabBarView: View {
     }
 }
 
-
 #Preview {
     TabBarView()
 }
+

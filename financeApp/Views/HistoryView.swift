@@ -11,17 +11,17 @@ struct HistoryView: View {
     }
     
     var body: some View {
-        NavigationStack {
-            VStack(alignment: .leading, spacing: 5) {
-                Text("Моя история")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                    .padding(.horizontal, 20)
-                mainList
-            }
-            .background(Color(.systemGray6))
-            .toolbar { trailingToolbar }
+        
+        VStack(alignment: .leading, spacing: 5) {
+            Text("Моя история")
+                .font(.largeTitle)
+                .fontWeight(.bold)
+                .padding(.horizontal, 20)
+            mainList
         }
+        .background(Color(.systemGray6))
+        .toolbar { trailingToolbar }
+        
     }
     
     private var mainList: some View {
@@ -137,7 +137,6 @@ struct HistoryView: View {
         }
     }
 }
-
 
 private extension DatePicker where Label == Text {
     func compactStyled() -> some View {

@@ -1,36 +1,53 @@
 import Foundation
 
-protocol BankAccountsServiceProtocol {
-    func fetchPrimary() async throws -> BankAccount
-    func update(account: BankAccount) async throws -> BankAccount
-}
-
-final class MockBankAccountsService: BankAccountsServiceProtocol {
-    private var sampleAccount = BankAccount(
-        id: 1,
-        userId: 42,
-        name: "Основной счёт",
-        balance: Decimal(string: "12345.67") ?? 0,
-        currency: "EUR",
-        createdAt: Date(timeIntervalSince1970: 1_600_000_000),
-        updatedAt: Date(timeIntervalSince1970: 1_650_000_000)
-    )
+final class MockBankAccountsService  {
+    private var sampleAccount: [BankAccount] = [
+        
+        BankAccount(
+            id: 1,
+            userId: 1,
+            name: "Основной счёт",
+            balance: 3336,
+            currency: "RUB",
+            createdAt: Date(),
+            updatedAt: Date()
+        ),
+        BankAccount(
+            id: 2,
+            userId: 1,
+            name: "Запасной счёт",
+            balance: 10000,
+            currency: "USD",
+            createdAt: Date(),
+            updatedAt: Date()
+        )
+    ]
     
     func fetchPrimary() async throws -> BankAccount {
         
-        return sampleAccount
+        guard let account = sampleAccount.first else {
+            throw AccountError.accountNotFound
+        }
+        return account
     }
     
-    func update(account: BankAccount) async throws -> BankAccount {
-        sampleAccount = BankAccount(
-            id: account.id,
-            userId: account.userId,
-            name: account.name,
-            balance: account.balance,
-            currency: account.currency,
-            createdAt: sampleAccount.createdAt,
-            updatedAt: Date()
-        )
-        return sampleAccount
+    func update(_ account: BankAccount) async throws {
+        
+        guard let index = sampleAccount.firstIndex(where: { $0.id == account.id }) else {
+            throw AccountError.accountNotFound
+        }
+        sampleAccount[index] = account
+    }
+}
+
+
+
+enum AccountError: Error, LocalizedError {
+    case accountNotFound
+    
+    var errorDescription: String? {
+        switch self {
+        case .accountNotFound: return "Account not found"
+        }
     }
 }

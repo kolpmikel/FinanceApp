@@ -2,24 +2,24 @@ import Foundation
 final class TransactionsFileCache {
     private let fileName: String
     private let fileURL: URL
-
+    
     private var transactions: [Transaction] = []
-
+    
     var allTransactions: [Transaction] {
         return transactions
     }
-
+    
     init(fileName: String = "transactions.json") {
         self.fileName = fileName
         let fm = FileManager.default
-
+        
         guard let supportDir = fm.urls(
             for: .applicationSupportDirectory,
             in: .userDomainMask
         ).first else {
             fatalError("Не удалось найти Application Support directory")
         }
-
+        
         if !fm.fileExists(atPath: supportDir.path) {
             do {
                 try fm.createDirectory(
@@ -31,22 +31,22 @@ final class TransactionsFileCache {
                 fatalError("Не удалось создать Application Support directory: \(error)")
             }
         }
-
+        
         self.fileURL = supportDir.appendingPathComponent(fileName)
         _ = load()
     }
-
+    
     func add(_ transaction: Transaction) {
         guard !transactions.contains(where: { $0.id == transaction.id }) else {
             return
         }
         transactions.append(transaction)
     }
-
+    
     func remove(id: Int) {
         transactions.removeAll(where: { $0.id == id })
     }
-
+    
     func save() throws {
         let jsonArray = transactions.map { $0.jsonObject }
         guard JSONSerialization.isValidJSONObject(jsonArray) else {
@@ -56,10 +56,6 @@ final class TransactionsFileCache {
         try data.write(to: fileURL, options: [.atomic])
     }
     
-//    enum error:Error, CustomNSError{
-//        case fileCache
-//    }
-//
     
     func load() -> [Transaction] {
         transactions.removeAll()

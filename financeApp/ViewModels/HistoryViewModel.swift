@@ -6,6 +6,7 @@ enum SortType: String, CaseIterable, Identifiable {
     var id: String { self.rawValue }
 }
 
+@MainActor
 final class HistoryViewModel: ObservableObject {
     let direction: Direction
     
@@ -59,7 +60,14 @@ final class HistoryViewModel: ObservableObject {
     func fetchData() {
         Task {
             do {
-                let interval = DateInterval(start: startDate, end: endDate)
+                let dayStart = Calendar.current.startOfDay(for: startDate)
+                let dayEnd   = Calendar.current.date(
+                    bySettingHour: 23,
+                    minute: 59,
+                    second: 59,
+                    of: Calendar.current.startOfDay(for: endDate)
+                )!
+                let interval = DateInterval(start: dayStart, end: dayEnd)
                 transactions = try await transactionsService.getTransactionsOfPeriod(interval: interval)
             } catch {
                 
