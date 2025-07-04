@@ -4,13 +4,17 @@ struct CheckView: View {
     @StateObject var viewModel = CheckViewModel()
     @State private var isEditing = false
     @State private var balance: Double = 0
-    @State private var currencyCode: String = "$"
-    @State private var showCurrencyPicker = false
     @State var editingCurrency: String = "RUB"
     @FocusState private var balanceFieldIsFocused: Bool
     @State private var isCurrencyDialogPresented = false
     @State private var isBalanceHidden = false
     
+    private var formattedBalance: String {
+        let style = FloatingPointFormatStyle<Double>.number
+            .precision(.fractionLength(0...2))
+        let numberString = style.format(balance)
+        return numberString + " " + currencySymbol(for: editingCurrency)
+    }
     
     var body: some View {
         NavigationStack{
@@ -102,7 +106,7 @@ struct CheckView: View {
                 Spacer()
                 if isEditing {
                     
-                    TextField("0", value: $balance, format: .number)
+                    TextField("", value: $balance, format: .number)
                         .keyboardType(.decimalPad)
                         .multilineTextAlignment(.trailing)
                         .focused($balanceFieldIsFocused)
@@ -115,10 +119,10 @@ struct CheckView: View {
                     
                 } else {
                     if isBalanceHidden {
-                        Text(balance, format: .currency(code: currencyCode))
+                        Text(formattedBalance)
                             .spoiler(isOn: $isBalanceHidden)
                     } else {
-                        Text(balance, format: .currency(code: currencyCode))
+                        Text(formattedBalance)
                             .transition(.opacity)
                     }
                 }
