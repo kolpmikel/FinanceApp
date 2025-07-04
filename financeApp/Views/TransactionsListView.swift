@@ -30,9 +30,7 @@ struct TransactionsListView: View {
                     HStack{
                         Text("Всего")
                         Spacer()
-                        Text(viewModel.totalAmountString)
-                            .foregroundColor(.gray)
-                        
+                        Text(viewModel.totalAmountString)                        
                     }
                     
                     Section(header: Text("Операции")) {
@@ -92,8 +90,6 @@ struct TransactionsListView: View {
             
         }
         .tint(Color.blue)
-        
-        
     }
 }
 

@@ -1,6 +1,17 @@
 import SwiftUI
 
 struct TabBarView: View {
+    init() {
+          let appearance = UITabBarAppearance()
+          appearance.configureWithOpaqueBackground()
+          appearance.backgroundColor = .white
+
+          UITabBar.appearance().standardAppearance = appearance
+          if #available(iOS 15.0, *) {
+              UITabBar.appearance().scrollEdgeAppearance = appearance
+          }
+      }
+    
     var body: some View {
         TabView {
             
