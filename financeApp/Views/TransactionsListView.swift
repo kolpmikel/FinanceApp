@@ -1,8 +1,12 @@
 import SwiftUI
 
+
 struct TransactionsListView: View {
     let direction: Direction
     @StateObject private var viewModel: TransactionsListViewModel
+    
+    @State private var editingTransaction: Transaction?
+    @State private var isPresentingCreate = false
     
     init(direction: Direction) {
         self.direction = direction
@@ -30,7 +34,8 @@ struct TransactionsListView: View {
                     HStack{
                         Text("Всего")
                         Spacer()
-                        Text(viewModel.totalAmountString)                        
+                        Text(viewModel.totalAmountString)
+                        
                     }
                     
                     Section(header: Text("Операции")) {
@@ -40,12 +45,14 @@ struct TransactionsListView: View {
                             
                             
                             HStack {
-                                Circle()
-                                    .fill(Color.green.opacity(0.25))
-                                    .frame(width: 22, height: 22)
-                                    .overlay(Text(String(category?.emoji ?? "❓"))
-                                        .font(.caption)
-                                    )
+                                
+                                ZStack{
+                                    Circle()
+                                        .fill(Color.green.opacity(0.25))
+                                        .frame(width: 32, height: 32)
+                                    Text(String(category?.emoji ?? "❓"))
+                                        .font(.system(size: 15))
+                                }
                                 
                                 VStack(alignment: .leading, spacing: 0) {
                                     Text(category?.name ?? "Категория \(String(describing: transaction.categoryId))")
@@ -64,14 +71,29 @@ struct TransactionsListView: View {
                                     .foregroundColor(.gray)
                                     .font(.caption)
                             }
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                editingTransaction = transaction
+                            }
                         }
+                    }
+                }
+                .sheet(item: $editingTransaction) { tx in
+                    MyTransactionView(
+                        direction: direction,
+                        transaction: tx
+                    )
+                    .onDisappear {
+                        Task { await viewModel.loadData() }
                     }
                 }
                 .listSectionSpacing(10)
                 
                 HStack {
                     Spacer()
-                    NavigationLink(destination: MyTransactions()){
+                    Button {
+                        isPresentingCreate = true
+                    } label: {
                         Image(systemName: "plus")
                             .font(.system(size: 24, weight: .bold))
                             .foregroundColor(.white)
@@ -79,6 +101,10 @@ struct TransactionsListView: View {
                             .background(Color.green)
                             .clipShape(Circle())
                             .shadow(radius: 4)
+                    }
+                    .sheet(isPresented: $isPresentingCreate) {
+                        MyTransactionView(direction: direction)
+                            .onDisappear { Task { await viewModel.loadData() } }
                     }
                     .padding()
                 }
@@ -90,6 +116,8 @@ struct TransactionsListView: View {
             
         }
         .tint(Color.blue)
+        
+        
     }
 }
 
