@@ -12,15 +12,6 @@ final class MockBankAccountsService  {
             createdAt: Date(),
             updatedAt: Date()
         ),
-        BankAccount(
-            id: 2,
-            userId: 1,
-            name: "Запасной счёт",
-            balance: 10000,
-            currency: "USD",
-            createdAt: Date(),
-            updatedAt: Date()
-        )
     ]
     
     func fetchPrimary() async throws -> BankAccount {

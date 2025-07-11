@@ -4,14 +4,14 @@ struct Transaction: Identifiable, Codable, Equatable {
     let id: Int
     
     let accountId: Int?
-    let categoryId: Int?
+    var categoryId: Int?
     
     let account: BankAccount?
     let category: Category?
     
     var amount: Decimal
-    let transactionDate: Date
-    let comment: String?
+    var transactionDate: Date
+    var comment: String?
     
     let createdAt: Date
     let updatedAt: Date

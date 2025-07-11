@@ -11,20 +11,24 @@ class TransactionsListViewModel: ObservableObject {
     @Published var transactions: [Transaction] = []
     @Published var categories: [Category] = []
     
-    init(direction: Direction,
-         transactionsService: MockTransactionsService = MockTransactionsService(),
-         categoriesService: MockCategoriesService = MockCategoriesService()) {
+    init(
+        direction: Direction,
+        transactionsService: MockTransactionsService = .shared,
+        categoriesService: MockCategoriesService = MockCategoriesService()
+    ) {
         self.direction = direction
         self.transactionsService = transactionsService
         self.categoriesService = categoriesService
+        
+        Task { await loadData() }
     }
     
     var filteredTransactions: [Transaction] {
         transactions.filter { tx in
-            guard let catId = tx.categoryId,
-                  let category = categories.first(where: { $0.id == catId })
-            else { return false }
-            return category.direction == direction
+            guard let cat = categories.first(where: { $0.id == tx.categoryId }) else {
+                return false
+            }
+            return cat.direction == direction
         }
     }
     
@@ -49,16 +53,16 @@ class TransactionsListViewModel: ObservableObject {
     }
     func loadData() async {
         do {
-            let today = transactionsService.todayInterval()
-            transactions = try await transactionsService.getTransactionsOfPeriod(interval: today)
+            categories = try await categoriesService.fetchAll()
         } catch {
-            
+            print("Ошибка загрузки категорий:", error)
         }
         
         do {
-            categories = try await categoriesService.fetchAll()
+            let today = transactionsService.todayInterval()
+            transactions = try await transactionsService.getTransactionsOfPeriod(interval: today)
         } catch {
-            
+            print("Ошибка загрузки транзакций:", error)
         }
     }
 }
