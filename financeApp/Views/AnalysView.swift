@@ -7,16 +7,46 @@ class AnalysisViewController: UIViewController {
     private let categories: [Category]
     private var transactions: [Transaction] = []
     private var sortedBy: SortOption = .date
-    
+
     private enum SortOption {
         case date, amount
     }
-    
+
+    private let loadingOverlay: UIView = {
+        let v = UIView()
+        v.backgroundColor = UIColor.black.withAlphaComponent(0.3)
+        v.translatesAutoresizingMaskIntoConstraints = false
+        v.isHidden = true
+        return v
+    }()
+    private let activityIndicator: UIActivityIndicatorView = {
+        let ai = UIActivityIndicatorView(style: .large)
+        ai.color = .gray
+        ai.translatesAutoresizingMaskIntoConstraints = false
+        return ai
+    }()
+    private func setupLoadingOverlay() {
+        view.addSubview(loadingOverlay)
+        loadingOverlay.addSubview(activityIndicator)
+        NSLayoutConstraint.activate([
+            loadingOverlay.topAnchor.constraint(equalTo: view.topAnchor),
+            loadingOverlay.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            loadingOverlay.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            loadingOverlay.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            activityIndicator.centerXAnchor.constraint(equalTo: loadingOverlay.centerXAnchor),
+            activityIndicator.centerYAnchor.constraint(equalTo: loadingOverlay.centerYAnchor)
+        ])
+    }
+    private func setLoading(_ loading: Bool) {
+        loadingOverlay.isHidden = !loading
+        if loading { activityIndicator.startAnimating() }
+        else      { activityIndicator.stopAnimating() }
+    }
+
     init(transactions: [Transaction], categories: [Category]) {
         self.allTransactions = transactions
         self.categories = categories
         super.init(nibName: nil, bundle: nil)
-        
         if let minDate = transactions.map({ $0.transactionDate }).min() {
             self.startDate = minDate
         }
@@ -24,21 +54,20 @@ class AnalysisViewController: UIViewController {
             self.endDate = maxDate
         }
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     private lazy var sortButton: UIButton = {
         let btn = UIButton(type: .system)
         btn.tintColor = .black
         let config = UIImage.SymbolConfiguration(pointSize: 16, weight: .light)
-        let image = UIImage(systemName: "arrow.up.arrow.down", withConfiguration: config)
-        btn.setImage(image, for: .normal)
+        btn.setImage(UIImage(systemName: "arrow.up.arrow.down", withConfiguration: config), for: .normal)
         btn.addTarget(self, action: #selector(sortButtonTapped), for: .touchUpInside)
         return btn
     }()
-    
+
     private lazy var sortLable: UILabel = {
         let label = UILabel()
         label.text = "Сортировка"
@@ -46,7 +75,7 @@ class AnalysisViewController: UIViewController {
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
-    
+
     private lazy var periodView: UIView = {
         let view = UIView()
         view.backgroundColor = .systemBackground
@@ -54,7 +83,7 @@ class AnalysisViewController: UIViewController {
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
-    
+
     private lazy var startLabel: UILabel = {
         let label = UILabel()
         label.text = "Начало"
@@ -62,7 +91,7 @@ class AnalysisViewController: UIViewController {
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
-    
+
     private lazy var sumLabel: UILabel = {
         let label = UILabel()
         label.text = "Сумма"
@@ -70,7 +99,7 @@ class AnalysisViewController: UIViewController {
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
-    
+
     private lazy var startDateButton: UIButton = {
         let btn = UIButton(type: .system)
         btn.titleLabel?.font = .systemFont(ofSize: 16)
@@ -79,7 +108,7 @@ class AnalysisViewController: UIViewController {
         btn.addTarget(self, action: #selector(selectStartDate), for: .touchUpInside)
         return btn
     }()
-    
+
     private lazy var endLabel: UILabel = {
         let label = UILabel()
         label.text = "Конец"
@@ -87,7 +116,7 @@ class AnalysisViewController: UIViewController {
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
-    
+
     private lazy var endDateButton: UIButton = {
         let btn = UIButton(type: .system)
         btn.titleLabel?.font = .systemFont(ofSize: 16)
@@ -96,7 +125,7 @@ class AnalysisViewController: UIViewController {
         btn.addTarget(self, action: #selector(selectEndDate), for: .touchUpInside)
         return btn
     }()
-    
+
     private lazy var amountLabel: UILabel = {
         let label = UILabel()
         label.text = "0 ₽"
@@ -104,7 +133,7 @@ class AnalysisViewController: UIViewController {
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
-    
+
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
         label.text = "Анализ"
@@ -113,7 +142,7 @@ class AnalysisViewController: UIViewController {
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
-    
+
     private lazy var operationsLabel: UILabel = {
         let label = UILabel()
         label.text = "ОПЕРАЦИИ"
@@ -122,7 +151,7 @@ class AnalysisViewController: UIViewController {
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
-    
+
     private lazy var operationsContainer: UIView = {
         let view = UIView()
         view.backgroundColor = .systemBackground
@@ -130,19 +159,19 @@ class AnalysisViewController: UIViewController {
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
-    
+
     private lazy var scrollView: UIScrollView = {
         let scrollView = UIScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         return scrollView
     }()
-    
+
     private lazy var contentContainer: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
-    
+
     private lazy var tableView: UITableView = {
         let tv = UITableView(frame: .zero, style: .plain)
         tv.translatesAutoresizingMaskIntoConstraints = false
@@ -158,172 +187,112 @@ class AnalysisViewController: UIViewController {
         tv.estimatedRowHeight = 60
         return tv
     }()
-    
+
     private var tableHeightConstraint: NSLayoutConstraint?
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        setupLoadingOverlay()
         filterAndReload()
     }
-    
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.navigationBar.prefersLargeTitles = true
         navigationItem.largeTitleDisplayMode = .always
-        
     }
-    
+
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         tableView.layoutIfNeeded()
         tableHeightConstraint?.constant = tableView.contentSize.height
     }
-    
+
     private func setupUI() {
         view.backgroundColor = .systemGroupedBackground
-        
+
         startDateButton.setTitle(formatDate(startDate), for: .normal)
         endDateButton.setTitle(formatDate(endDate), for: .normal)
-        
+
         view.addSubview(titleLabel)
         view.addSubview(scrollView)
         scrollView.addSubview(contentContainer)
-        
+
         contentContainer.addSubview(periodView)
         let vs = UIStackView(arrangedSubviews: [
             makeRow(title: startLabel, value: startDateButton, isLast: false),
-            makeRow(title: endLabel, value: endDateButton,   isLast: false),
-            makeRow(title: sortLable, value: sortButton, isLast: false),
-            makeRow(title: sumLabel, value: amountLabel,     isLast: true)
+            makeRow(title: endLabel,   value: endDateButton,   isLast: false),
+            makeRow(title: sortLable,  value: sortButton,      isLast: false),
+            makeRow(title: sumLabel,   value: amountLabel,     isLast: true)
         ])
         vs.axis = .vertical
         vs.spacing = 10
         vs.translatesAutoresizingMaskIntoConstraints = false
         periodView.addSubview(vs)
-        
+
         contentContainer.addSubview(operationsLabel)
         contentContainer.addSubview(operationsContainer)
         operationsContainer.addSubview(tableView)
-        
+
         tableHeightConstraint = tableView.heightAnchor.constraint(equalToConstant: 0)
         tableHeightConstraint?.isActive = true
-        
+
         NSLayoutConstraint.activate([
             titleLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             titleLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
-            
+
             scrollView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 16),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-            
+
             contentContainer.topAnchor.constraint(equalTo: scrollView.topAnchor),
             contentContainer.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
             contentContainer.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
             contentContainer.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
             contentContainer.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
-            
+
             periodView.topAnchor.constraint(equalTo: contentContainer.topAnchor, constant: 24),
             periodView.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: 16),
             periodView.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -16),
-            
+
             vs.topAnchor.constraint(equalTo: periodView.topAnchor, constant: 8),
             vs.leadingAnchor.constraint(equalTo: periodView.leadingAnchor, constant: 16),
             vs.trailingAnchor.constraint(equalTo: periodView.trailingAnchor, constant: -16),
             vs.bottomAnchor.constraint(equalTo: periodView.bottomAnchor, constant: -8),
-            
+
             operationsLabel.topAnchor.constraint(equalTo: periodView.bottomAnchor, constant: 16),
             operationsLabel.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: 32),
-            
+
             operationsContainer.topAnchor.constraint(equalTo: operationsLabel.bottomAnchor, constant: 6),
             operationsContainer.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: 16),
             operationsContainer.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -16),
-            
+
             tableView.topAnchor.constraint(equalTo: operationsContainer.topAnchor),
             tableView.leadingAnchor.constraint(equalTo: operationsContainer.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: operationsContainer.trailingAnchor),
             operationsContainer.bottomAnchor.constraint(equalTo: tableView.bottomAnchor),
-            
+
             contentContainer.bottomAnchor.constraint(equalTo: operationsContainer.bottomAnchor)
         ])
     }
-    
-    @objc private func backButtonTapped() {
-        navigationController?.popViewController(animated: true)
-    }
-    
-    @objc private func sortButtonTapped() {
-        let alert = UIAlertController(title: "Сортировка", message: nil, preferredStyle: .actionSheet)
-        alert.addAction(UIAlertAction(title: "По дате", style: .default) { [weak self] _ in
-            self?.sortedBy = .date; self?.sortTransactions()
-        })
-        alert.addAction(UIAlertAction(title: "По сумме", style: .default) { [weak self] _ in
-            self?.sortedBy = .amount; self?.sortTransactions()
-        })
-        alert.addAction(UIAlertAction(title: "Отмена", style: .cancel))
-        present(alert, animated: true)
-    }
-    
-    @objc private func selectStartDate() { showSwiftUIStyleDatePicker(isStart: true) }
-    @objc private func selectEndDate()   { showSwiftUIStyleDatePicker(isStart: false) }
-    
-    private func showSwiftUIStyleDatePicker(isStart: Bool) {
-        let datePickerVC = SwiftUIStyleDatePickerViewController()
-        datePickerVC.currentDate = isStart ? startDate : endDate
-        datePickerVC.title = isStart ? "Выберите начальную дату" : "Выберите конечную дату"
-        datePickerVC.modalPresentationStyle = .pageSheet
-        
-        if #available(iOS 15.0, *) {
-            if let sheet = datePickerVC.sheetPresentationController {
-                sheet.detents = [.medium()]
-                sheet.prefersGrabberVisible = true
-            }
-        }
-        
-        datePickerVC.onDateSelected = { [weak self] selectedDate in
-            if isStart {
-                self?.startDate = selectedDate
-                self?.startDateButton.setTitle(self?.formatDate(selectedDate), for: .normal)
-                
-                if let endDate = self?.endDate, selectedDate > endDate {
-                    self?.endDate = selectedDate
-                    self?.endDateButton.setTitle(self?.formatDate(selectedDate), for: .normal)
-                }
-            } else {
-                self?.endDate = selectedDate
-                self?.endDateButton.setTitle(self?.formatDate(selectedDate), for: .normal)
-                
-                if let startDate = self?.startDate, selectedDate < startDate {
-                    self?.startDate = selectedDate
-                    self?.startDateButton.setTitle(self?.formatDate(selectedDate), for: .normal)
-                }
-            }
-            
-            self?.filterAndReload()
-        }
-        
-        if let pop = datePickerVC.popoverPresentationController {
-            let sourceButton = isStart ? startDateButton : endDateButton
-            pop.sourceView = sourceButton
-            pop.sourceRect = sourceButton.bounds
-            pop.permittedArrowDirections = .up
-        }
-        
-        present(datePickerVC, animated: true)
-    }
-    
+
     private func filterAndReload() {
-        transactions = allTransactions.filter { $0.transactionDate >= startDate && $0.transactionDate <= endDate }
+        setLoading(true)
+        transactions = allTransactions.filter {
+            $0.transactionDate >= startDate && $0.transactionDate <= endDate
+        }
         updateTotalAmount()
         sortTransactions()
+        setLoading(false)
     }
-    
+
     private func updateTotalAmount() {
         let totalAmount = transactions.reduce(Decimal(0)) { $0 + $1.amount }
         amountLabel.text = "\(formatAmount(totalAmount)) ₽"
     }
-    
+
     private func sortTransactions() {
         switch sortedBy {
         case .date:
@@ -335,14 +304,70 @@ class AnalysisViewController: UIViewController {
         tableView.layoutIfNeeded()
         tableHeightConstraint?.constant = tableView.contentSize.height
     }
-    
+
+    @objc private func sortButtonTapped() {
+        let alert = UIAlertController(title: "Сортировка", message: nil, preferredStyle: .actionSheet)
+        alert.addAction(UIAlertAction(title: "По дате", style: .default) { [weak self] _ in
+            self?.sortedBy = .date; self?.sortTransactions()
+        })
+        alert.addAction(UIAlertAction(title: "По сумме", style: .default) { [weak self] _ in
+            self?.sortedBy = .amount; self?.sortTransactions()
+        })
+        alert.addAction(UIAlertAction(title: "Отмена", style: .cancel))
+        present(alert, animated: true)
+    }
+
+    @objc private func selectStartDate() { showSwiftUIStyleDatePicker(isStart: true) }
+    @objc private func selectEndDate()   { showSwiftUIStyleDatePicker(isStart: false) }
+
+    private func showSwiftUIStyleDatePicker(isStart: Bool) {
+        let datePickerVC = SwiftUIStyleDatePickerViewController()
+        datePickerVC.currentDate = isStart ? startDate : endDate
+        datePickerVC.title = isStart ? "Выберите начальную дату" : "Выберите конечную дату"
+        datePickerVC.modalPresentationStyle = .pageSheet
+
+        if #available(iOS 15.0, *) {
+            datePickerVC.sheetPresentationController?.detents = [.medium()]
+            datePickerVC.sheetPresentationController?.prefersGrabberVisible = true
+        }
+
+        datePickerVC.onDateSelected = { [weak self] selectedDate in
+            guard let self = self else { return }
+            if isStart {
+                self.startDate = selectedDate
+                self.startDateButton.setTitle(self.formatDate(selectedDate), for: .normal)
+                if selectedDate > self.endDate {
+                    self.endDate = selectedDate
+                    self.endDateButton.setTitle(self.formatDate(selectedDate), for: .normal)
+                }
+            } else {
+                self.endDate = selectedDate
+                self.endDateButton.setTitle(self.formatDate(selectedDate), for: .normal)
+                if selectedDate < self.startDate {
+                    self.startDate = selectedDate
+                    self.startDateButton.setTitle(self.formatDate(selectedDate), for: .normal)
+                }
+            }
+            self.filterAndReload()
+        }
+
+        if let pop = datePickerVC.popoverPresentationController {
+            let sourceButton = isStart ? startDateButton : endDateButton
+            pop.sourceView = sourceButton
+            pop.sourceRect = sourceButton.bounds
+            pop.permittedArrowDirections = .up
+        }
+
+        present(datePickerVC, animated: true)
+    }
+
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "dd MMMM yyyy"
         formatter.locale = Locale(identifier: "ru_RU")
         return formatter.string(from: date)
     }
-    
+
     private func formatAmount(_ amount: Decimal) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal

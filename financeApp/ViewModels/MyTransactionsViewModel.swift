@@ -9,37 +9,42 @@ class MyTransactionViewModel: ObservableObject {
     
     @Published private(set) var categories: [Category] = []
     
-    @Published var isProcessing: Bool = false
+    @Published var isLoading: Bool       = false
+    @Published var isProcessing: Bool    = false
+    @Published var errorMessage: String? = nil
     
     let direction: Direction
-    private let editingTransaction: Transaction?
-    private let txService: MockTransactionsService
-    private let accService: MockBankAccountsService
-    private let catService: MockCategoriesService
+    private var editingTransaction: Transaction?
+    private let txService: any TransactionsServiceProtocol
+    private let accService: any BankAccountsServiceProtocol
+    private let catService: any CategoriesServiceProtocol
     
     init(
         direction: Direction,
         transaction: Transaction? = nil,
-        txService: MockTransactionsService = .shared,
-        accService: MockBankAccountsService = .init(),
-        catService: MockCategoriesService = .init()
+        txService:     any TransactionsServiceProtocol   = APITransactionsService.shared,
+        accService:    any BankAccountsServiceProtocol  = APIBankAccountsService.shared,
+        catService:    any CategoriesServiceProtocol    = APICategoriesService.shared
     ) {
-        self.direction = direction
+        self.direction         = direction
         self.editingTransaction = transaction
-        self.txService = txService
-        self.accService = accService
-        self.catService = catService
+        self.txService         = txService
+        self.accService        = accService
+        self.catService        = catService
         
-        self.date = transaction?.transactionDate ?? Date()
+        self.date         = transaction?.transactionDate ?? Date()
         self.amountString = transaction != nil
         ? NSDecimalNumber(decimal: transaction!.amount).stringValue
         : ""
-        self.comment = transaction?.comment ?? ""
+        self.comment      = transaction?.comment ?? ""
         
         Task { await loadCategories() }
     }
     
     func loadCategories() async {
+        isLoading = true
+        defer { isLoading = false }
+        
         do {
             let cats = try await catService.fetch(by: direction)
             categories = cats
@@ -47,7 +52,7 @@ class MyTransactionViewModel: ObservableObject {
                 selectedCategory = cats.first { $0.id == tx.categoryId }
             }
         } catch {
-            print("Ошибка загрузки категорий:", error)
+            errorMessage = makeUserMessage(from: error)
         }
     }
     
@@ -66,41 +71,52 @@ class MyTransactionViewModel: ObservableObject {
     func createTransaction() {
         guard canSubmit else { return }
         isProcessing = true
+        errorMessage  = nil
+        
         Task {
             defer { isProcessing = false }
             do {
                 let account = try await accService.fetchPrimary()
-                let amount = Decimal(string: amountString)!
+                let amount  = Decimal(string: amountString)!
                 let newTx = Transaction(
-                    id: 0,
-                    accountId: account.id,
-                    categoryId: selectedCategory!.id,
-                    amount: amount,
+                    id:             0,
+                    accountId:      account.id,
+                    categoryId:     selectedCategory!.id,
+                    amount:         amount,
                     transactionDate: date,
-                    comment: comment.isEmpty ? nil : comment,
-                    createdAt: Date(),
-                    updatedAt: Date()
+                    comment:        comment.isEmpty ? nil : comment,
+                    createdAt:      Date(),
+                    updatedAt:      Date()
                 )
                 _ = try await txService.create(newTx)
+                NotificationCenter.default.post(name: .transactionsDidChange, object: nil)
             } catch {
-                print("Ошибка создания:", error)
+                errorMessage = makeUserMessage(from: error)
             }
         }
     }
     
     func updateTransaction() {
         guard canSubmit, var tx = editingTransaction else { return }
-        isProcessing = true
+        isProcessing  = true
+        errorMessage   = nil
+        
         Task {
             defer { isProcessing = false }
             do {
-                tx.categoryId = selectedCategory!.id
-                tx.amount = Decimal(string: amountString)!
+                if tx.accountId == nil {
+                    let acct = try await accService.fetchPrimary()
+                    tx.accountId = acct.id
+                }
+                tx.categoryId      = selectedCategory!.id
+                tx.amount          = Decimal(string: amountString)!
                 tx.transactionDate = date
-                tx.comment = comment.isEmpty ? nil : comment
+                tx.comment         = comment.isEmpty ? nil : comment
+                
                 _ = try await txService.update(tx)
+                NotificationCenter.default.post(name: .transactionsDidChange, object: nil)
             } catch {
-                print("Ошибка обновления:", error)
+                errorMessage = makeUserMessage(from: error)
             }
         }
     }
@@ -108,12 +124,15 @@ class MyTransactionViewModel: ObservableObject {
     func deleteTransaction() {
         guard let tx = editingTransaction else { return }
         isProcessing = true
+        errorMessage  = nil
+        
         Task {
             defer { isProcessing = false }
             do {
                 try await txService.delete(id: tx.id)
+                NotificationCenter.default.post(name: .transactionsDidChange, object: nil)
             } catch {
-                print("Ошибка удаления:", error)
+                errorMessage = makeUserMessage(from: error)
             }
         }
     }

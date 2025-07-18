@@ -4,14 +4,27 @@ enum TransactionsServiceError: Error {
     case notFound(id: Int)
 }
 
-final class MockTransactionsService: ObservableObject {
+protocol TransactionsServiceProtocol: ObservableObject {
+    func todayInterval() -> DateInterval
+    
+    func getTransactions(of interval: DateInterval) async throws -> [Transaction]
+    
+    func create(_ tx: Transaction) async throws -> Transaction
+    
+    func update(_ tx: Transaction) async throws -> Transaction
+    
+    func delete(id: Int) async throws
+}
+
+final class MockTransactionsService: ObservableObject, TransactionsServiceProtocol {
     static let shared = MockTransactionsService()
     
     @Published private var transactions: [Transaction]
     private var nextId: Int
     
+    
     private init() {
-        let now = Date()
+        _ = Date()
         let initialTransactions: [Transaction] = [
             Transaction(
                 id: 1,
@@ -20,26 +33,6 @@ final class MockTransactionsService: ObservableObject {
                 amount: Decimal(10000.00),
                 transactionDate: Date(),
                 comment: "тест",
-                createdAt: Date(),
-                updatedAt: Date()
-            ),
-            Transaction(
-                id: 8,
-                accountId: 1,
-                categoryId: 3,
-                amount: Decimal(2000.00),
-                transactionDate: Date(),
-                comment: nil,
-                createdAt: Date(),
-                updatedAt: Date()
-            ),
-            Transaction(
-                id: 2,
-                accountId: 1,
-                categoryId: 5,
-                amount: Decimal(3000.00),
-                transactionDate: Date(),
-                comment: "Кофе",
                 createdAt: Date(),
                 updatedAt: Date()
             ),
@@ -53,46 +46,6 @@ final class MockTransactionsService: ObservableObject {
                 createdAt: Date(),
                 updatedAt: Date()
             ),
-            Transaction(
-                id: 4,
-                accountId: 1,
-                categoryId: 1,
-                amount: Decimal(5000.00),
-                transactionDate: Calendar.current.date(byAdding: .day, value: -2, to: Date()) ?? Date(),
-                comment: "Абонемент",
-                createdAt: Date(),
-                updatedAt: Date()
-            ),
-            Transaction(
-                id: 5,
-                accountId: 1,
-                categoryId: 2,
-                amount: Decimal(1000.00),
-                transactionDate: Calendar.current.date(byAdding: .day, value: -5, to: Date()) ?? Date(),
-                comment: "Танцы",
-                createdAt: Date(),
-                updatedAt: Date()
-            ),
-            Transaction(
-                id: 6,
-                accountId: 1,
-                categoryId: 4,
-                amount: Decimal(100.00),
-                transactionDate: Calendar.current.date(byAdding: .day, value: -14, to: Date()) ?? Date(),
-                comment: "Учеба",
-                createdAt: Date(),
-                updatedAt: Date()
-            ),
-            Transaction(
-                id: 7,
-                accountId: 1,
-                categoryId: 4,
-                amount: Decimal(500.00),
-                transactionDate: Calendar.current.date(byAdding: .day, value: -17, to: Date()) ?? Date(),
-                comment: "Учеба",
-                createdAt: Date(),
-                updatedAt: Date()
-            )
             
         ]
         self.transactions = initialTransactions
@@ -104,7 +57,7 @@ final class MockTransactionsService: ObservableObject {
         return DateInterval(start: startOfDay, end: endOfDay)
     }
     
-    func getTransactionsOfPeriod(interval: DateInterval) async throws -> [Transaction] {
+    func getTransactions(of interval: DateInterval) async throws -> [Transaction] {
         return transactions.filter { interval.contains($0.transactionDate) }
     }
     
@@ -151,3 +104,4 @@ final class MockTransactionsService: ObservableObject {
         transactions.remove(at: idx)
     }
 }
+
