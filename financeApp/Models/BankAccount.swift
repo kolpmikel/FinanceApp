@@ -3,7 +3,7 @@ import Foundation
 struct BankAccount: Identifiable, Codable, Equatable {
     let id: Int
     let userId: Int
-    let name: String
+    var name: String
     var balance: Decimal
     var currency: String
     let createdAt: Date
@@ -11,14 +11,13 @@ struct BankAccount: Identifiable, Codable, Equatable {
     
     private enum CodingKeys: String, CodingKey {
         case id
-        case userId
+        case userId    = "userId"
         case name
         case balance
         case currency
-        case createdAt
-        case updatedAt
+        case createdAt = "createdAt"
+        case updatedAt = "updatedAt"
     }
-    
     init(
         id: Int,
         userId: Int,
@@ -58,6 +57,7 @@ struct BankAccount: Identifiable, Codable, Equatable {
         }
         
         let iso = ISO8601DateFormatter()
+        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         let createdStr = try c.decode(String.self, forKey: .createdAt)
         guard let cDate = iso.date(from: createdStr) else {
             throw DecodingError.dataCorruptedError(
@@ -89,4 +89,17 @@ struct BankAccount: Identifiable, Codable, Equatable {
         try c.encode(iso.string(from: createdAt), forKey: .createdAt)
         try c.encode(iso.string(from: updatedAt), forKey: .updatedAt)
     }
+    
+    func toBalanceTransaction() -> Transaction {
+            Transaction(
+                id:            self.id,
+                accountId:     self.id,
+                categoryId:    nil,
+                amount:        self.balance,
+                transactionDate: Date(),
+                comment:       "Backup balance update",
+                createdAt:     Date(),
+                updatedAt:     Date()
+            )
+        }
 }

@@ -27,6 +27,7 @@
 		270671212DFC35220055E4FE /* financeApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = financeApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		270671312DFC35260055E4FE /* financeAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = financeAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2706713B2DFC35260055E4FE /* financeAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = financeAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		2793DDCF2E2A4B5C00D5B94B /* SwiftData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftData.framework; path = System/Library/Frameworks/SwiftData.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -78,6 +79,7 @@
 				270671232DFC35220055E4FE /* financeApp */,
 				270671342DFC35260055E4FE /* financeAppTests */,
 				2706713E2DFC35260055E4FE /* financeAppUITests */,
+				2793DDCE2E2A4B5C00D5B94B /* Frameworks */,
 				270671222DFC35220055E4FE /* Products */,
 			);
 			sourceTree = "<group>";
@@ -90,6 +92,14 @@
 				2706713B2DFC35260055E4FE /* financeAppUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		2793DDCE2E2A4B5C00D5B94B /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				2793DDCF2E2A4B5C00D5B94B /* SwiftData.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
