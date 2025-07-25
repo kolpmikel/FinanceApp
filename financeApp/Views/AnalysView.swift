@@ -1,4 +1,5 @@
 import UIKit
+import PieChart
 
 class AnalysisViewController: UIViewController {
     private var startDate: Date = Date()
@@ -6,11 +7,21 @@ class AnalysisViewController: UIViewController {
     private let allTransactions: [Transaction]
     private let categories: [Category]
     private var transactions: [Transaction] = []
+    {
+      didSet { updateChart() }
+    }
     private var sortedBy: SortOption = .date
 
     private enum SortOption {
         case date, amount
     }
+    
+    private let pieChartView: PieChartView = {
+      let v = PieChartView()
+      v.translatesAutoresizingMaskIntoConstraints = false
+      v.backgroundColor = .clear
+      return v
+    }()
 
     private let loadingOverlay: UIView = {
         let v = UIView()
@@ -216,6 +227,8 @@ class AnalysisViewController: UIViewController {
         endDateButton.setTitle(formatDate(endDate), for: .normal)
 
         view.addSubview(titleLabel)
+//        view.addSubview(pieChartView)
+
         view.addSubview(scrollView)
         scrollView.addSubview(contentContainer)
 
@@ -233,14 +246,23 @@ class AnalysisViewController: UIViewController {
 
         contentContainer.addSubview(operationsLabel)
         contentContainer.addSubview(operationsContainer)
+        contentContainer.addSubview(pieChartView)
+
         operationsContainer.addSubview(tableView)
 
         tableHeightConstraint = tableView.heightAnchor.constraint(equalToConstant: 0)
         tableHeightConstraint?.isActive = true
-
+       
         NSLayoutConstraint.activate([
-            titleLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            titleLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
             titleLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
+            
+            pieChartView.topAnchor.constraint(equalTo: periodView.bottomAnchor, constant: 16),
+                    // leading/trailing во всю ширину
+                    pieChartView.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: 16),
+                    pieChartView.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -16),
+                    // фиксированная высота или пропорция
+                    pieChartView.heightAnchor.constraint(equalTo: pieChartView.widthAnchor, multiplier: 0.6),
 
             scrollView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 16),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -262,12 +284,14 @@ class AnalysisViewController: UIViewController {
             vs.trailingAnchor.constraint(equalTo: periodView.trailingAnchor, constant: -16),
             vs.bottomAnchor.constraint(equalTo: periodView.bottomAnchor, constant: -8),
 
-            operationsLabel.topAnchor.constraint(equalTo: periodView.bottomAnchor, constant: 16),
+            operationsLabel.topAnchor.constraint(equalTo: pieChartView.bottomAnchor, constant: 16),
             operationsLabel.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: 32),
+            
 
             operationsContainer.topAnchor.constraint(equalTo: operationsLabel.bottomAnchor, constant: 6),
             operationsContainer.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: 16),
             operationsContainer.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -16),
+            
 
             tableView.topAnchor.constraint(equalTo: operationsContainer.topAnchor),
             tableView.leadingAnchor.constraint(equalTo: operationsContainer.leadingAnchor),
@@ -276,6 +300,8 @@ class AnalysisViewController: UIViewController {
 
             contentContainer.bottomAnchor.constraint(equalTo: operationsContainer.bottomAnchor)
         ])
+//        operationsLabel.topAnchor.constraint(equalTo: pieChartView.bottomAnchor, constant: 16).isActive = true
+
     }
 
     private func filterAndReload() {
@@ -293,6 +319,22 @@ class AnalysisViewController: UIViewController {
         amountLabel.text = "\(formatAmount(totalAmount)) ₽"
     }
 
+    private func updateChart() {
+      // Сгруппировали суммы по категориям
+      let sums = Dictionary(grouping: transactions) { $0.categoryId }
+        .mapValues { $0.map(\.amount).reduce(0, +) }
+
+      // Сконвертировали в Entity
+      var ents: [Entity] = categories.compactMap { cat in
+        guard let sum = sums[cat.id], sum > 0 else { return nil }
+        return Entity(value: sum, label: cat.name)
+      }
+      // Отсортировали
+      ents.sort { $0.value > $1.value }
+
+      // Передали в PieChartView — это вызовет setNeedsDisplay()
+      pieChartView.entities = ents
+    }
     private func sortTransactions() {
         switch sortedBy {
         case .date:

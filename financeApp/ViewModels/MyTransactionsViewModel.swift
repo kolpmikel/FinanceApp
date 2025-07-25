@@ -1,5 +1,23 @@
 import Foundation
 
+extension Encodable {
+    /// Возвращает красивый JSON того же формата, что уйдёт через JSONEncoderWithDates
+    func prettyJSON(encoder: JSONEncoder = JSONEncoderWithDates) -> String {
+        let enc = encoder
+        if #available(iOS 13.0, *) {
+            enc.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+        } else {
+            enc.outputFormatting = [.prettyPrinted, .sortedKeys]
+        }
+        do {
+            let data = try enc.encode(self)
+            return String(data: data, encoding: .utf8) ?? "<non-utf8>"
+        } catch {
+            return "❌ encode error: \(error)"
+        }
+    }
+}
+
 @MainActor
 class MyTransactionViewModel: ObservableObject {
     @Published var selectedCategory: Category?
@@ -88,7 +106,13 @@ class MyTransactionViewModel: ObservableObject {
                     createdAt:      Date(),
                     updatedAt:      Date()
                 )
-                _ = try await txService.create(newTx)
+                let createdPayload = newTx.prettyJSON()
+                print("➡️ CREATE TX BODY:\n\(createdPayload)")
+//                let created = try await txService.create(newTx)
+                
+                let created = try await txService.create(newTx)
+                print("⬅️ CREATED:", created.id, created.transactionDate)
+
                 NotificationCenter.default.post(name: .transactionsDidChange, object: nil)
             } catch {
                 errorMessage = makeUserMessage(from: error)

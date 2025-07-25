@@ -13,46 +13,29 @@ struct CheckView: View {
     @State private var isBalanceHidden = false
 
     private var formattedBalance: String {
-        let style = FloatingPointFormatStyle<Double>.number
-            .precision(.fractionLength(0...2))
+        let style = FloatingPointFormatStyle<Double>.number.precision(.fractionLength(0...2))
         return style.format(balance) + " " + currencySymbol(for: editingCurrency)
     }
 
     var body: some View {
-        ZStack {
-            NavigationStack {
-                VStack(alignment: .leading, spacing: 5) {
-                    Text("Мой счет")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .padding(.horizontal, 20)
-
-                    mainList
-
-                    ShakeDetector {
-                        withAnimation { isBalanceHidden.toggle() }
-                    }
-                }
-                .background(Color(.systemGray6))
+        NavigationStack {
+            mainList
+                .navigationTitle("Мой счет")
                 .toolbar { toolBarSection }
                 .gesture(
                     DragGesture().onEnded { value in
-                        if value.translation.height > 0 {
-                            balanceFieldIsFocused = false
-                        }
+                        if value.translation.height > 0 { balanceFieldIsFocused = false }
                     }
                 )
                 .task {
-                    await viewModel.loadAccount()
+                    await viewModel.loadData()
                     if let acct = viewModel.bankAccount {
                         name            = acct.name
                         balance         = NSDecimalNumber(decimal: acct.balance).doubleValue
                         editingCurrency = acct.currency
                     }
                 }
-                .refreshable {
-                    await viewModel.loadAccount()
-                }
+                .refreshable { await viewModel.loadData() }
                 .onChange(of: viewModel.bankAccount) { _, new in
                     if let acct = new {
                         name            = acct.name
@@ -60,42 +43,59 @@ struct CheckView: View {
                         editingCurrency = acct.currency
                     }
                 }
-                .alert(
-                    viewModel.errorMessage ?? "",
-                    isPresented: Binding(
-                        get: { viewModel.errorMessage != nil },
-                        set: { if !$0 { viewModel.errorMessage = nil } }
-                    )
-                ) {
-                    Button("OK", role: .cancel) {
-                        viewModel.errorMessage = nil
+                .alert(viewModel.errorMessage ?? "", isPresented: Binding(
+                    get: { viewModel.errorMessage != nil },
+                    set: { if !$0 { viewModel.errorMessage = nil } }
+                )) {
+                    Button("OK", role: .cancel) { viewModel.errorMessage = nil }
+                }
+                .overlay {
+                    if viewModel.isLoading {
+                        ZStack {
+                            Color.black.opacity(0.3).ignoresSafeArea()
+                            ProgressView().scaleEffect(1.5)
+                        }
                     }
                 }
-            }
-
-            if viewModel.isLoading {
-                ZStack {
-                    Color.black.opacity(0.3)
-                        .ignoresSafeArea()
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .gray))
-                        .scaleEffect(1.5)
-                }
-            }
         }
     }
 
+    // MARK: - Main List
     private var mainList: some View {
         List {
             balanceSection
                 .listRowBackground(isEditing ? Color.white : Color.accentColor)
+
             curencySection
                 .listRowBackground(isEditing ? Color.white : Color.accentColor.opacity(0.3))
+
+            if !isEditing {
+                chartSection
+                    .listRowBackground(Color(.systemBackground))
+            }
         }
         .listSectionSpacing(20)
-        .listRowBackground(Color.clear)
         .scrollContentBackground(.hidden)
-        .background(Color.clear)
+        .background(Color(.systemGray6))
+        .safeAreaInset(edge: .bottom) { Color.clear.frame(height: 0) }
+    }
+
+    // MARK: - Sections
+    private var chartSection: some View {
+        Section {
+            if viewModel.dailyBalances.isEmpty {
+                Text("Нет данных для графика")
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .center)
+            } else {
+                BalanceChartView(points: viewModel.dailyBalances)
+                    .transition(.opacity)
+                
+            }
+        }
+        .listRowInsets(EdgeInsets())
+        .listRowBackground(Color(.systemGray6))
+        
     }
 
     private var balanceSection: some View {
@@ -112,20 +112,14 @@ struct CheckView: View {
                         .onSubmit { balanceFieldIsFocused = false }
                 } else {
                     if isBalanceHidden {
-                        Text(formattedBalance)
-                            .spoiler(isOn: $isBalanceHidden)
+                        Text(formattedBalance).spoiler(isOn: $isBalanceHidden)
                     } else {
-                        Text(formattedBalance)
-                            .transition(.opacity)
+                        Text(formattedBalance).transition(.opacity)
                     }
                 }
             }
             .contentShape(Rectangle())
-            .onTapGesture {
-                if isEditing {
-                    balanceFieldIsFocused = true
-                }
-            }
+            .onTapGesture { if isEditing { balanceFieldIsFocused = true } }
 
             if isEditing {
                 HStack {
@@ -150,10 +144,8 @@ struct CheckView: View {
                         isCurrencyDialogPresented = true
                     } label: {
                         HStack {
-                            Text(currencySymbol(for: editingCurrency))
-                                .foregroundColor(.gray)
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(.gray)
+                            Text(currencySymbol(for: editingCurrency)).foregroundColor(.gray)
+                            Image(systemName: "chevron.right").foregroundColor(.gray)
                         }
                     }
                     .confirmationDialog("Валюта", isPresented: $isCurrencyDialogPresented) {
@@ -168,6 +160,7 @@ struct CheckView: View {
         }
     }
 
+    // MARK: - Toolbar
     private var toolBarSection: some ToolbarContent {
         ToolbarItem(placement: .navigationBarTrailing) {
             if isEditing {
@@ -181,16 +174,13 @@ struct CheckView: View {
                         )
                     }
                 }
-                .foregroundColor(.blue)
             } else {
-                Button("Редактировать") {
-                    isEditing = true
-                }
-                .foregroundColor(.blue)
+                Button("Редактировать") { isEditing = true }
             }
         }
     }
 
+    // MARK: - Helpers
     private func pasteFromClipboard() {
         if let clipboard = UIPasteboard.general.string {
             let cleaned = clipboard
